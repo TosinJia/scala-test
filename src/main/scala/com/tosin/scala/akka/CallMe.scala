@@ -2,6 +2,8 @@ package com.tosin.scala.akka
 
 import akka.actor.{Actor, ActorSystem, Props}
 
+import scala.io.StdIn
+
 object CallMe {
   //1. 创建ActorSystem 用ActorSystem 创建Actor
   private val acFactory = ActorSystem("acFactory")
@@ -10,9 +12,17 @@ object CallMe {
 
   def main(args: Array[String]): Unit = {
     //3. 发送消息
-    callRef ! "你好！"
-    callRef ! "你是谁？"
-    callRef ! "停止"
+//    callRef ! "你好！"
+//    callRef ! "你是谁？"
+//    callRef ! "停止"
+
+    //3.1 循环发送消息
+    var line = ""
+    while(!line.equals("停止")){
+      println("请输入：")
+      line = StdIn.readLine()
+      callRef ! line
+    }
   }
 }
 
@@ -27,5 +37,6 @@ class CallMe extends Actor {
       //关闭ActorSystem
       context.system.terminate()
     }
+    case _ => println("no support!")
   }
 }
