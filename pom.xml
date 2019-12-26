@@ -11,7 +11,7 @@
     <!-- akka-test com.tosin.scala.akka -->
     <properties>
         <actor.version>2.5.4</actor.version>
-        <spark.version>2.1.0</spark.version>
+        <spark.version>2.4.4</spark.version>
         <scala.version>2.11.8</scala.version>
     </properties>
 
