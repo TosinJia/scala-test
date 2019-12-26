@@ -9,5 +9,4 @@ class WorkerInfo(val id:String, val workerHost:String, val memory:String, val co
   override def toString: String = {
     s"WorkerInfo(${id} ${workerHost} ${memory} ${cores})"
   }
-
 }

@@ -10,7 +10,3 @@ case class SendHeartBeat()
 case class HeartBeat(id:String)
 //master超时检查消息
 case class CheckOfTimeOutWorker()
-
-class ActorMessage {
-
-}

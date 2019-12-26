@@ -4,7 +4,10 @@ import akka.actor.{Actor, ActorSystem, Props}
 import com.typesafe.config.ConfigFactory
 
 import scala.collection.mutable
-class Master  extends Actor {
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+
+class Master extends Actor {
   //worker列表
   var idWorker = new mutable.HashMap[String, WorkerInfo]
 
@@ -15,7 +18,7 @@ class Master  extends Actor {
   val WORKER_OUTTIME = 10*1000
 
   override def preStart(): Unit = {
-    //master提醒自己检查
+    //master提醒自己检查worker是否失效
     context.system.scheduler.schedule(5 millis, WORKER_OUTTIME millis, self, CheckOfTimeOutWorker)
   }
 
@@ -23,7 +26,7 @@ class Master  extends Actor {
     // 接收worker的注册信息
     case RegisterWorker(id, workerHost, memory, cores) => {
       //判断worker是否存在
-      if(!idWorker.contains(id)){
+      if (!idWorker.contains(id)) {
         val worker = new WorkerInfo(id, workerHost, memory, cores)
         workers.add(worker)
         idWorker(id) = worker
@@ -32,25 +35,25 @@ class Master  extends Actor {
         sender ! RegisterdWorker(worker.id)
       }
     }
-      // 接收worker心跳
-      case HeartBeat(id) =>
-        val workerInfo = idWorker(id)
-        println("get heatbeat from "+workerInfo)
-        //更新心跳时间
-        workerInfo.lastHeartBeat = System.currentTimeMillis()
+    // 接收worker心跳
+    case HeartBeat(id) =>
+      val workerInfo = idWorker(id)
+      println("get heatbeat from " + workerInfo)
+      //更新心跳时间
+      workerInfo.lastHeartBeat = System.currentTimeMillis()
 
-      case CheckOfTimeOutWorker =>
-        //获取一个最新的时间
-        val currentTime = System.currentTimeMillis()
-        //遍历workers，将过滤出失效的worker
-        val toRemove = workers.filter(workerinfo => currentTime - workerinfo.lastHeartBeat > WORKER_OUTTIME)
-        //循环删除失效的worker
-        for(worker <- toRemove){
-          workers -= worker
-          idWorker.remove(worker.id)
-        }
-        //打印
-        println("worker size"+workers.size)
+    case CheckOfTimeOutWorker =>
+      //获取一个最新的时间
+      val currentTime = System.currentTimeMillis()
+      //遍历workers，将过滤出失效的worker
+      val toRemove = workers.filter(workerinfo => currentTime - workerinfo.lastHeartBeat > WORKER_OUTTIME).toArray
+      //循环删除失效的worker
+      for (worker <- toRemove) {
+        workers -= worker
+        idWorker.remove(worker.id)
+      }
+      //打印存活worker数
+      println("worker size: " + workers.size)
 
   }
 }
@@ -58,9 +61,15 @@ class Master  extends Actor {
 //编写master启动程序
 object Master extends App {
   val host = "localHost"
-  val port = 8888
+  val port = 9999
   //创建Actor System的参数
-  val configStr = s""
+  val configStr =
+    s"""
+       |akka.actor.provider = "akka.remote.RemoteActorRefProvider"
+       |akka.remote.netty.tcp.hostname = "$host"
+       |akka.remote.netty.tcp.port = "$port"
+       """.stripMargin
+
   var  config = ConfigFactory.parseString(configStr)
 
   //创建Actor
